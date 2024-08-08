@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # List of file paths
-file_paths = [f'test/20240806_142738/data__dev_ttyACM{i}.npz' for i in range(6)]
+file_paths = [f'data__dev_ttyACM{i}.npz' for i in range(6)]
 
 print(file_paths)
 # Initialize a figure with 6 subplots

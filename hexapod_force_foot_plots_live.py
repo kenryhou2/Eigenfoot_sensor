@@ -17,9 +17,9 @@ def handle_device(port, test_dir):
         fig, ax = plt.subplots()
         lines = [ax.plot([], [])[0] for _ in range(12)]  # Create a line object for each index
 
-        # indices = [2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15, 16]  # Indices to print
+        indices = [2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15, 16]  # Indices to print
         # Hall effect #1 xyz, Hall effect #2 xyz, Hall effect #3 xyz, Hall effect #4 xyz
-        indices = [10, 15, 2, 7]
+        # indices = [10, 15, 2, 7]
         data_buffer = [[] for _ in indices]  # Initialize a list of lists to store the latest 100 data points for each index
 
         # Set up the file for saving data
@@ -31,6 +31,8 @@ def handle_device(port, test_dir):
             ax.set_xlim(0, 40)
             ax.set_ylim(-30000, 30000)  # Adjust these limits based on your data range
             ax.legend([f"Index {i}" for i in indices])  # Add legend with index numbers
+            #name figure the device name
+            ax.set_title(f"Device {port}")
             return lines
 
         def update(frame):
