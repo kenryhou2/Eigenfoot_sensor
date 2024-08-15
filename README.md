@@ -9,7 +9,7 @@ This script processes and visualizes force data from multiple `.npz` files. It a
 The script expects the `.npz` files to be located in the `test/20240808_165323_good_flat_walk/` directory. The file paths are generated dynamically for six files corresponding to different legs.
 
 ## .npz File Format
-
+There are 6 '.npz' files corresponding to data streamed from 6 different force sensors (one on each leg).
 Each `.npz` file contains the following data:
 - `time`: An array of time stamps.
 - `index_{j}`: Force measurements for different indices. The indices used in this script are `[2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15, 16]`.
