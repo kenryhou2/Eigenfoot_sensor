@@ -1,3 +1,5 @@
+# This README is about gait_plotter.py
+
 # Force Data Processing and Visualization
 
 This script processes and visualizes force data from multiple `.npz` files. It applies a lowpass Butterworth filter to the data, calculates the norm of the forces, and identifies peaks and troughs in the average force signal. The results are plotted for each leg.
