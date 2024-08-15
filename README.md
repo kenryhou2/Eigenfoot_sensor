@@ -66,5 +66,4 @@ The `main()` function processes all files and plots the results.
 
 To run the script, execute the following command:
 
-```bash
-./script_name.py
+`python3 gait_plotter.py`
