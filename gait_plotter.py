@@ -5,15 +5,35 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks, butter, filtfilt
 
 # global variables
-# file_paths = [f'test/20240808_164938_terrain/data__dev_ttyACM{i}.npz' for i in range(6)]
-file_paths = [f'test/20240808_165323_good_flat_walk/data__dev_ttyACM{i}.npz' for i in range(6)]
+file_paths = [f'test/20240808_164938_terrain/data__dev_ttyACM{i}.npz' for i in range(6)]
+# file_paths = [f'test/20240808_165323_good_flat_walk/data__dev_ttyACM{i}.npz' for i in range(6)]
 leg_names = ['L1', 'L2', 'L3', 'R1', 'R2', 'R3']
 indices = [2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15, 16]
 fig, axs = plt.subplots(6, 1, sharex=True, figsize=(10, 15))
 forces = []
 plot_start_time = 76 #seconds
+window_size = 200
 
-def butter_lowpass(cutoff, fs, order=5):
+def update_stance_swing(event_ax, force_ave, plotting_time, plot_time_offset, ax):
+    #based on the min and max values of force_ave within the visible window,
+    xlim = event_ax.get_xlim()#get the current x-axis view limits
+
+    #determine which data points are visible within the current window
+    force_visible = force_ave[(plotting_time >= xlim[0]) & (plotting_time <= xlim[1])]
+    
+    #plot the stance (dark gray) and swing (light gray) highlights for the visible window.
+    stance, swing = find_swing_stance(force_visible)
+    
+    ax.fill_between(plotting_time, 0, 1, where=stance[plot_time_offset:], color='darkgray', alpha=0.5, transform=ax.get_xaxis_transform())
+    ax.fill_between(plotting_time, 0, 1, where=swing[plot_time_offset:], color='lightgray', alpha=0.5, transform=ax.get_xaxis_transform())
+
+    
+
+def moving_average(signal, window_size):
+    padded_signal = np.pad(signal, (window_size//2, window_size-1-window_size//2), mode='edge')
+    return np.convolve(padded_signal, np.ones(window_size)/window_size, mode='valid')
+
+def butter_lowpass(cutoff, fs, order=10):
     """
     Design a lowpass Butterworth filter.
     
@@ -30,7 +50,7 @@ def butter_lowpass(cutoff, fs, order=5):
     b, a = butter(order, normal_cutoff, btype='low', analog=False)
     return b, a
 
-def lowpass_filter(data, cutoff, fs, order=5):
+def lowpass_filter(data, cutoff, fs, order=1):
     """
     Apply a lowpass Butterworth filter to the data.
     
@@ -94,7 +114,7 @@ def find_swing_stance(force_avg):
     swing (ndarray): Boolean array indicating swing phase.
     """
     peak_to_peak = np.max(force_avg) - np.min(force_avg)
-    threshold = np.min(force_avg) + peak_to_peak / 4
+    threshold = np.min(force_avg) + peak_to_peak / 2
     stance = force_avg >= threshold
     swing = force_avg < threshold
     return stance, swing
@@ -118,23 +138,24 @@ def process_file(file_path, indices, leg_name, ax):
     
     norm_forces = find_norm(forces, hall_effect_sensor_offset)
     force_avg = np.mean(norm_forces, axis=0)
-    force_avg = lowpass_filter(force_avg, int(sampling_rate/2)-1, int(sampling_rate))
+    # force_avg = lowpass_filter(force_avg, int(sampling_rate/2)-1, int(sampling_rate))
+    force_avg = moving_average(force_avg, window_size)
     
     peaks, troughs = find_peaks_troughs(force_avg)
     
     plot_time_offset = np.where(time >= plot_start_time)[0][0]
     plotting_time = time[plot_time_offset:]
-    
+    ax.callbacks.connect(update_stance_swing('xlim_changed', force_avg, plotting_time, plot_time_offset, ax)) #change stance swing shading based on window
     ax.plot(plotting_time, force_avg[plot_time_offset:], label='Average Force')
     adjusted_peaks = peaks[peaks >= plot_time_offset] - plot_time_offset
     adjusted_troughs = troughs[troughs >= plot_time_offset] - plot_time_offset
     ax.scatter(plotting_time[adjusted_peaks], force_avg[plot_time_offset:][adjusted_peaks], color='red', label='Peak')
     ax.scatter(plotting_time[adjusted_troughs], force_avg[plot_time_offset:][adjusted_troughs], color='green', label='Trough')
     
-    stance, swing = find_swing_stance(force_avg)
+    # stance, swing = find_swing_stance(force_avg)
     
-    ax.fill_between(plotting_time, 0, 1, where=stance[plot_time_offset:], color='darkgray', alpha=0.5, transform=ax.get_xaxis_transform())
-    ax.fill_between(plotting_time, 0, 1, where=swing[plot_time_offset:], color='lightgray', alpha=0.5, transform=ax.get_xaxis_transform())
+    # ax.fill_between(plotting_time, 0, 1, where=stance[plot_time_offset:], color='darkgray', alpha=0.5, transform=ax.get_xaxis_transform())
+    # ax.fill_between(plotting_time, 0, 1, where=swing[plot_time_offset:], color='lightgray', alpha=0.5, transform=ax.get_xaxis_transform())
     
     ax.set_title(f'Leg {leg_name}')
     ax.set_ylabel('Force Magnitude')
